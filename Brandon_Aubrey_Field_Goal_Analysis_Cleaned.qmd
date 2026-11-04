@@ -1,0 +1,155 @@
+---
+title: "Brandon Aubrey Field Goal Analysis"
+author: Jude Stapleton
+format: pdf
+editor: visual
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(ggplot2)
+```
+
+## Background
+
+I looked at Brandon Aubrey's field goal percentage for the Dallas Cowboys to see whether his 2025 season was different from his career performance. My dad has always been a Cowboys fan, so this was a topic I was interested in. Each field goal is either made or missed, which makes the data a good fit for a one-sample proportion test.
+
+I am studying the proportion of field goal attempts Aubrey makes. I count a made field goal as a success and a missed field goal as a failure.
+
+
+## Source of Data
+
+I used Aubrey's reported career field goal percentage as the comparison value. The NFL statistics I recorded showed 112 made field goals out of 127 attempts, or about 88.2%. This is the proportion used in my null hypothesis.
+
+For the 2025 season, I recorded 36 made field goals out of 42 attempts, or 85.7%. I used those 42 attempts for the test. One limitation is that the reported career total also includes the 2025 season, so the two figures are not completely independent. This comparison is useful for practice, but a pre-2025 career percentage would be a better historical baseline.
+
+Data source: NFL player statistics
+
+<https://www.nfl.com/players/brandon-aubrey/stats/>
+
+## Define the Data in R
+
+```{r}
+# Reported career field goal percentage (includes 2025)
+p0 <- 0.882
+
+# 2025 season sample data
+made <- 36
+attempts <- 42
+missed <- attempts - made
+
+# Sample proportion
+phat <- made / attempts
+phat
+```
+
+## Graphical Representation
+
+```{r}
+#| label: graph
+#| fig-cap: "Made and missed field goals during the 2025 season."
+
+fg_data <- data.frame(
+  Result = c("Made", "Missed"),
+  Count = c(made, missed)
+)
+
+ggplot(fg_data, aes(x = Result, y = Count)) +
+  geom_col() +
+  labs(
+    title = "Brandon Aubrey 2025 Field Goal Results",
+    subtitle = "36 made field goals and 6 missed field goals out of 42 attempts",
+    x = "Result",
+    y = "Number of Field Goal Attempts"
+  )
+```
+
+```{r}
+#| label: proportion-graph
+#| fig-cap: "Sample field goal percentage compared with the career field goal percentage."
+
+compare_data <- data.frame(
+  Type = c("2025 Sample", "Career Percentage"),
+  Proportion = c(phat, p0)
+)
+
+ggplot(compare_data, aes(x = Type, y = Proportion)) +
+  geom_col() +
+  ylim(0, 1) +
+  labs(
+    title = "2025 Field Goal Percentage vs. Career Percentage",
+    x = "Comparison",
+    y = "Field Goal Proportion"
+  )
+```
+
+## Hypothesis Test
+
+### Step 1: State the hypotheses
+
+The null hypothesis is that Aubrey's 2025 field goal success probability is equal to the reported career percentage.
+
+Null hypothesis (Ho): p = 0.882
+
+The alternative is that his 2025 field goal success probability differs from 88.2%.
+
+Alternative Hypothesis (Ha): p not equal 0.882
+
+I used a two-sided test because I wanted to check for a difference in either direction.
+
+### Step 2: Check conditions
+
+This is a one-sample proportion test because each attempt has two possible outcomes: made or missed. The sample includes 42 attempts.
+
+Using the null proportion of 0.882, the expected numbers of makes and misses are:
+
+```{r}
+attempts * p0
+attempts * (1 - p0)
+```
+
+The expected number of misses is below 5, so a normal approximation may not be reliable. I used an exact binomial test in R and also calculated the z statistic for comparison.
+
+### Step 3: Calculate the test statistic
+
+```{r}
+z_stat <- (phat - p0) / sqrt(p0 * (1 - p0) / attempts)
+z_stat
+```
+
+The z statistic is about -0.499. The negative value shows that his 2025 percentage was slightly below the reported career percentage.
+
+### Step 4: Calculate the P-value
+
+```{r}
+binom_test <- binom.test(made, attempts, p = p0, alternative = "two.sided", conf.level = 0.95)
+binom_test
+```
+
+The exact binomial test gives a p-value of about 0.6294, which is greater than 0.05.
+
+### Step 5: Make a decision and conclusion
+
+Since the p-value is greater than 0.05, I fail to reject the null hypothesis. The test does not provide enough evidence of a difference from the reported career percentage.
+
+His 2025 percentage (85.7%) was a little lower than 88.2%, but the difference could be due to normal variation in field goal results.
+
+## Confidence Interval
+
+```{r}
+ci_result <- binom.test(made, attempts, conf.level = 0.95)
+ci_result$conf.int
+```
+
+The 95% confidence interval from the exact binomial test is approximately 71.5% to 94.6%. It shows the uncertainty in estimating his 2025 success probability from 42 attempts.
+
+Because 88.2% falls inside this interval, the interval is consistent with the result of the hypothesis test.
+
+## Summary
+
+I compared Brandon Aubrey's 2025 field goal percentage (36 of 42, or 85.7%) with the reported career percentage of 88.2%.
+
+The exact binomial test did not show a statistically significant difference. The confidence interval also included 88.2%. Since the career figure includes the season being tested, I would use an earlier career baseline if I expanded this project.
+
+This project helped me see that a small change in a percentage does not necessarily mean a player's performance has changed. Sample size and uncertainty matter too.
